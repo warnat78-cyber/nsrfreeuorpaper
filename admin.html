@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin Panel – RU Notes NSR</title>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&family=Hind:wght@400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    :root{
+      --orange:#FF6B2C;--orange-light:#FFF0E8;--orange-dark:#e05520;
+      --blue:#1A56D6;--blue-light:#EBF2FF;
+      --green:#15803D;--green-light:#DCFCE7;
+      --red:#DC2626;--red-light:#FEE2E2;
+      --purple:#7C3AED;--purple-light:#EDE9FE;
+      --dark:#1a1a2e;--gray:#64748B;--light:#F8FAFC;--white:#fff;
+      --shadow:0 4px 24px rgba(0,0,0,0.10);
+    }
+    body{font-family:'Hind',sans-serif;background:var(--light);color:var(--dark);min-height:100vh;}
+
+    /* ===== LOGIN ===== */
+    #loginScreen{
+      position:fixed;inset:0;z-index:9999;
+      background:linear-gradient(135deg,#1a1a2e 0%,#16213e 60%,#0f3460 100%);
+      display:flex;align-items:center;justify-content:center;
+    }
+    .login-box{
+      background:var(--white);border-radius:20px;padding:48px 40px;
+      width:100%;max-width:400px;text-align:center;
+      box-shadow:0 20px 60px rgba(0,0,0,0.4);
+    }
+    .login-logo{font-family:'Baloo 2',sans-serif;font-size:2rem;font-weight:800;color:var(--orange);margin-bottom:4px;}
+    .login-logo span{color:var(--blue);}
+    .login-sub{font-size:0.9rem;color:var(--gray);margin-bottom:28px;}
+    .login-label{display:block;text-align:left;font-size:0.85rem;font-weight:600;color:var(--dark);margin-bottom:6px;}
+    .login-input{
+      width:100%;padding:12px 16px;border:2px solid #e2e8f0;border-radius:10px;
+      font-size:1rem;font-family:'Hind',sans-serif;outline:none;transition:border 0.2s;
+      margin-bottom:18px;
+    }
+    .login-input:focus{border-color:var(--orange);}
+    .login-btn{
+      width:100%;padding:13px;background:linear-gradient(135deg,var(--orange),#f59e0b);
+      color:#fff;border:none;border-radius:10px;font-size:1rem;font-weight:700;
+      font-family:'Baloo 2',sans-serif;cursor:pointer;transition:opacity 0.2s;
+    }
+    .login-btn:hover{opacity:0.9;}
+    .login-err{color:var(--red);font-size:0.85rem;margin-top:10px;display:none;}
+    .login-lock{font-size:3rem;margin-bottom:16px;}
+
+    /* ===== ADMIN LAYOUT ===== */
+    #adminPanel{display:none;}
+    .top-bar{
+      background:var(--dark);color:#fff;padding:0 28px;height:60px;
+      display:flex;align-items:center;justify-content:space-between;
+      position:sticky;top:0;z-index:100;
+    }
+    .top-logo{font-family:'Baloo 2',sans-serif;font-size:1.2rem;font-weight:800;color:var(--orange);}
+    .top-logo span{color:#60a5fa;}
+    .top-right{display:flex;align-items:center;gap:16px;}
+    .top-badge{background:#ffffff18;padding:4px 12px;border-radius:50px;font-size:0.78rem;color:#94a3b8;}
+    .logout-btn{
+      background:var(--red);color:#fff;border:none;padding:7px 16px;
+      border-radius:8px;font-size:0.82rem;font-weight:600;cursor:pointer;font-family:'Hind',sans-serif;
+    }
+
+    .admin-body{display:flex;min-height:calc(100vh - 60px);}
+
+    /* ===== SIDEBAR ===== */
+    .sidebar{
+      width:240px;background:var(--white);border-right:2px solid #f1f5f9;
+      padding:20px 0;flex-shrink:0;
+    }
+    .sidebar-title{padding:0 20px 12px;font-size:0.72rem;font-weight:700;color:#94a3b8;letter-spacing:1px;text-transform:uppercase;}
+    .sidebar-item{
+      display:flex;align-items:center;gap:10px;padding:11px 20px;
+      font-size:0.92rem;font-weight:600;cursor:pointer;color:var(--gray);
+      transition:all 0.15s;border-left:3px solid transparent;
+    }
+    .sidebar-item:hover{background:var(--orange-light);color:var(--orange);}
+    .sidebar-item.active{background:var(--orange-light);color:var(--orange);border-left-color:var(--orange);}
+    .sidebar-item .icon{font-size:1.1rem;width:22px;text-align:center;}
+    .sidebar-sep{height:1px;background:#f1f5f9;margin:12px 16px;}
+
+    /* ===== MAIN CONTENT ===== */
+    .main{flex:1;padding:28px;overflow-y:auto;}
+    .page{display:none;}
+    .page.active{display:block;}
+
+    /* ===== CARDS ===== */
+    .stats-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px;margin-bottom:28px;}
+    .stat-card{
+      background:var(--white);border-radius:14px;padding:20px;box-shadow:var(--shadow);
+      text-align:center;border-top:4px solid var(--orange);
+    }
+    .stat-num{font-family:'Baloo 2',sans-serif;font-size:2rem;font-weight:800;color:var(--dark);}
+    .stat-label{font-size:0.8rem;color:var(--gray);margin-top:4px;}
+
+    /* ===== PAGE HEADER ===== */
+    .page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:gap;}
+    .page-title{font-family:'Baloo 2',sans-serif;font-size:1.5rem;font-weight:800;}
+    .page-title span{color:var(--orange);}
+
+    /* ===== ADD FORM ===== */
+    .card{background:var(--white);border-radius:16px;padding:24px;box-shadow:var(--shadow);margin-bottom:24px;}
+    .card-title{font-family:'Baloo 2',sans-serif;font-size:1.1rem;font-weight:700;margin-bottom:18px;color:var(--dark);display:flex;align-items:center;gap:8px;}
+    .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+    .form-group{display:flex;flex-direction:column;gap:5px;}
+    .form-group.full{grid-column:1/-1;}
+    label{font-size:0.82rem;font-weight:600;color:var(--dark);}
+    input[type=text],select,textarea{
+      padding:10px 14px;border:2px solid #e2e8f0;border-radius:10px;
+      font-size:0.9rem;font-family:'Hind',sans-serif;outline:none;
+      transition:border 0.2s;width:100%;
+    }
+    input[type=text]:focus,select:focus,textarea:focus{border-color:var(--orange);}
+    textarea{resize:vertical;min-height:70px;}
+    .radio-group{display:flex;gap:16px;flex-wrap:wrap;}
+    .radio-opt{display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.88rem;font-weight:600;}
+    .radio-opt input{cursor:pointer;}
+
+    .btn-add{
+      background:linear-gradient(135deg,var(--orange),#f59e0b);color:#fff;
+      border:none;padding:11px 24px;border-radius:10px;font-size:0.92rem;
+      font-weight:700;font-family:'Baloo 2',sans-serif;cursor:pointer;
+      transition:opacity 0.2s;margin-top:6px;
+    }
+    .btn-add:hover{opacity:0.88;}
+    .btn-del{
+      background:var(--red-light);color:var(--red);border:none;
+      padding:6px 12px;border-radius:8px;font-size:0.8rem;font-weight:600;
+      cursor:pointer;font-family:'Hind',sans-serif;transition:all 0.2s;
+    }
+    .btn-del:hover{background:var(--red);color:#fff;}
+    .btn-edit{
+      background:var(--blue-light);color:var(--blue);border:none;
+      padding:6px 12px;border-radius:8px;font-size:0.8rem;font-weight:600;
+      cursor:pointer;font-family:'Hind',sans-serif;transition:all 0.2s;margin-right:6px;
+    }
+    .btn-edit:hover{background:var(--blue);color:#fff;}
+
+    /* ===== TABLE ===== */
+    .table-wrap{background:var(--white);border-radius:16px;box-shadow:var(--shadow);overflow:hidden;}
+    .table-wrap table{width:100%;border-collapse:collapse;}
+    .table-wrap th{
+      background:var(--dark);color:#fff;padding:12px 16px;
+      text-align:left;font-family:'Baloo 2',sans-serif;font-size:0.88rem;
+    }
+    .table-wrap td{padding:12px 16px;font-size:0.88rem;border-bottom:1px solid #f1f5f9;}
+    .table-wrap tr:last-child td{border-bottom:none;}
+    .table-wrap tr:hover td{background:#f8fafc;}
+    .empty-row td{text-align:center;color:var(--gray);padding:32px;font-size:0.9rem;}
+
+    /* ===== BADGES ===== */
+    .tag{display:inline-block;padding:2px 10px;border-radius:50px;font-size:0.74rem;font-weight:700;}
+    .tag-notes{background:var(--blue-light);color:var(--blue);}
+    .tag-pyq{background:var(--orange-light);color:var(--orange-dark);}
+    .tag-available{background:var(--green-light);color:var(--green);}
+    .tag-soon{background:#fef9c3;color:#854d0e;}
+
+    /* ===== SEARCH ===== */
+    .search-bar{
+      width:100%;padding:10px 16px;border:2px solid #e2e8f0;border-radius:10px;
+      font-size:0.9rem;font-family:'Hind',sans-serif;outline:none;
+      margin-bottom:16px;transition:border 0.2s;
+    }
+    .search-bar:focus{border-color:var(--orange);}
+
+    /* ===== TOAST ===== */
+    #toast{
+      position:fixed;bottom:28px;right:28px;z-index:99999;
+      background:var(--dark);color:#fff;padding:14px 22px;border-radius:12px;
+      font-size:0.9rem;font-weight:600;opacity:0;transform:translateY(20px);
+      transition:all 0.3s;pointer-events:none;display:flex;align-items:center;gap:8px;
+    }
+    #toast.show{opacity:1;transform:translateY(0);}
+    #toast.success{border-left:4px solid var(--green);}
+    #toast.error{border-left:4px solid var(--red);}
+
+    /* ===== MODAL ===== */
+    .modal-overlay{
+      display:none;position:fixed;inset:0;z-index:8888;
+      background:rgba(0,0,0,0.6);align-items:center;justify-content:center;
+    }
+    .modal-overlay.open{display:flex;}
+    .modal-box{
+      background:var(--white);border-radius:18px;padding:32px;
+      width:100%;max-width:480px;box-shadow:0 20px 60px rgba(0,0,0,0.25);
+    }
+    .modal-title{font-family:'Baloo 2',sans-serif;font-size:1.2rem;font-weight:800;margin-bottom:18px;}
+    .modal-btns{display:flex;gap:10px;justify-content:flex-end;margin-top:20px;}
+    .btn-cancel{
+      background:#f1f5f9;color:var(--gray);border:none;padding:10px 20px;
+      border-radius:8px;font-size:0.88rem;font-weight:600;cursor:pointer;
+    }
+    .btn-confirm-del{
+      background:var(--red);color:#fff;border:none;padding:10px 20px;
+      border-radius:8px;font-size:0.88rem;font-weight:600;cursor:pointer;
+    }
+
+    @media(max-width:768px){
+      .sidebar{display:none;}
+      .form-grid{grid-template-columns:1fr;}
+      .stats-row{grid-template-columns:1fr 1fr;}
+    }
+  </style>
+</head>
+<body>
+
+<!-- ===== LOGIN SCREEN ===== -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-lock">🔐</div>
+    <div class="login-logo">RU Notes <span>NSR</span></div>
+    <div class="login-sub">Admin Panel – Sirf Authorized Access</div>
+    <label class="login-label">Password</label>
+    <input type="password" class="login-input" id="pwdInput" placeholder="Password daalo..." onkeydown="if(event.key==='Enter')doLogin()"/>
+    <button class="login-btn" onclick="doLogin()">🔓 Login Karo</button>
+    <div class="login-err" id="loginErr">❌ Galat password! Dobara try karo.</div>
+  </div>
+</div>
+
+<!-- ===== ADMIN PANEL ===== -->
+<div id="adminPanel">
+
+  <!-- Top Bar -->
+  <div class="top-bar">
+    <div class="top-logo">⚙️ RU Notes <span>Admin</span></div>
+    <div class="top-right">
+      <span class="top-badge">👤 Natwar Singh</span>
+      <button class="logout-btn" onclick="doLogout()">Logout</button>
+    </div>
+  </div>
+
+  <div class="admin-body">
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <div class="sidebar-title">Navigation</div>
+      <div class="sidebar-item active" onclick="showPage('dashboard',this)">
+        <span class="icon">📊</span> Dashboard
+      </div>
+      <div class="sidebar-item" onclick="showPage('addContent',this)">
+        <span class="icon">➕</span> Content Add Karo
+      </div>
+      <div class="sidebar-sep"></div>
+      <div class="sidebar-title">Pages</div>
+      <div class="sidebar-item" onclick="showPage('pageBCA',this)">
+        <span class="icon">💻</span> BCA
+      </div>
+      <div class="sidebar-item" onclick="showPage('pageBA',this)">
+        <span class="icon">📖</span> BA
+      </div>
+      <div class="sidebar-item" onclick="showPage('pageBSC',this)">
+        <span class="icon">🔬</span> BSc
+      </div>
+      <div class="sidebar-item" onclick="showPage('pageBCOM',this)">
+        <span class="icon">💰</span> B.Com
+      </div>
+      <div class="sidebar-item" onclick="showPage('pageCl10',this)">
+        <span class="icon">📚</span> Class 10
+      </div>
+      <div class="sidebar-item" onclick="showPage('pageCl12',this)">
+        <span class="icon">📝</span> Class 12
+      </div>
+      <div class="sidebar-sep"></div>
+      <div class="sidebar-item" onclick="showPage('exportPage',this)">
+        <span class="icon">📤</span> Export / Help
+      </div>
+    </div>
+
+    <!-- Main -->
+    <div class="main">
+
+      <!-- DASHBOARD -->
+      <div class="page active" id="page-dashboard">
+        <div class="page-header">
+          <div class="page-title">Dashboard <span>Overview</span></div>
+        </div>
+        <div class="stats-row" id="statsRow"></div>
+        <div class="card">
+          <div class="card-title">🕐 Recent Activity</div>
+          <div id="recentActivity" style="font-size:0.88rem;color:var(--gray);">Koi activity nahi abhi tak.</div>
+        </div>
+      </div>
+
+      <!-- ADD CONTENT -->
+      <div class="page" id="page-addContent">
+        <div class="page-header">
+          <div class="page-title">Content <span>Add Karo</span></div>
+        </div>
+        <div class="card">
+          <div class="card-title">📄 Naya Note / PYQ Add Karo</div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Page / Course *</label>
+              <select id="fPage">
+                <option value="">-- Select Karo --</option>
+                <option value="BCA">BCA</option>
+                <option value="BA">BA</option>
+                <option value="BSc">BSc</option>
+                <option value="BCom">B.Com</option>
+                <option value="Class10">Class 10</option>
+                <option value="Class12-Science">Class 12 Science</option>
+                <option value="Class12-Arts">Class 12 Arts</option>
+                <option value="Class12-Commerce">Class 12 Commerce</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Subject / Title *</label>
+              <input type="text" id="fSubject" placeholder="e.g. C Programming, Physics"/>
+            </div>
+            <div class="form-group">
+              <label>Semester / Year / Class</label>
+              <input type="text" id="fSem" placeholder="e.g. Sem 1, 2024, Class 10"/>
+            </div>
+            <div class="form-group">
+              <label>Type *</label>
+              <div class="radio-group" style="margin-top:8px;">
+                <label class="radio-opt"><input type="radio" name="fType" value="Notes" checked/> 📄 Notes</label>
+                <label class="radio-opt"><input type="radio" name="fType" value="PYQ"/> 📋 PYQ</label>
+                <label class="radio-opt"><input type="radio" name="fType" value="Both"/> 📄+📋 Both</label>
+              </div>
+            </div>
+            <div class="form-group full">
+              <label>Google Drive Link *</label>
+              <input type="text" id="fLink" placeholder="https://drive.google.com/file/d/FILE_ID/view"/>
+            </div>
+            <div class="form-group full">
+              <label>Description (optional)</label>
+              <textarea id="fDesc" placeholder="Short description likho..."></textarea>
+            </div>
+            <div class="form-group">
+              <label>Status</label>
+              <select id="fStatus">
+                <option value="Available">✅ Available</option>
+                <option value="Coming Soon">⏳ Coming Soon</option>
+              </select>
+            </div>
+          </div>
+          <button class="btn-add" onclick="addContent()">➕ Add Karo</button>
+        </div>
+      </div>
+
+      <!-- BCA PAGE -->
+      <div class="page" id="page-pageBCA">
+        <div class="page-title" style="margin-bottom:20px;">BCA <span style="color:var(--orange);">Content</span></div>
+        <input class="search-bar" placeholder="🔍 Subject search karo..." oninput="filterTable('BCA',this.value)"/>
+        <div class="table-wrap" id="table-BCA"></div>
+      </div>
+
+      <!-- BA PAGE -->
+      <div class="page" id="page-pageBA">
+        <div class="page-title" style="margin-bottom:20px;">BA <span style="color:var(--orange);">Content</span></div>
+        <input class="search-bar" placeholder="🔍 Subject search karo..." oninput="filterTable('BA',this.value)"/>
+        <div class="table-wrap" id="table-BA"></div>
+      </div>
+
+      <!-- BSc PAGE -->
+      <div class="page" id="page-pageBSC">
+        <div class="page-title" style="margin-bottom:20px;">BSc <span style="color:var(--orange);">Content</span></div>
+        <input class="search-bar" placeholder="🔍 Subject search karo..." oninput="filterTable('BSc',this.value)"/>
+        <div class="table-wrap" id="table-BSc"></div>
+      </div>
+
+      <!-- BCom PAGE -->
+      <div class="page" id="page-pageBCOM">
+        <div class="page-title" style="margin-bottom:20px;">B.Com <span style="color:var(--orange);">Content</span></div>
+        <input class="search-bar" placeholder="🔍 Subject search karo..." oninput="filterTable('BCom',this.value)"/>
+        <div class="table-wrap" id="table-BCom"></div>
+      </div>
+
+      <!-- Class 10 -->
+      <div class="page" id="page-pageCl10">
+        <div class="page-title" style="margin-bottom:20px;">Class 10 <span style="color:var(--orange);">Content</span></div>
+        <input class="search-bar" placeholder="🔍 Subject search karo..." oninput="filterTable('Class10',this.value)"/>
+        <div class="table-wrap" id="table-Class10"></div>
+      </div>
+
+      <!-- Class 12 -->
+      <div class="page" id="page-pageCl12">
+        <div class="page-title" style="margin-bottom:20px;">Class 12 <span style="color:var(--orange);">Content</span></div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;">
+          <button class="btn-edit" onclick="setC12Filter('all')" id="c12all">Sab</button>
+          <button class="btn-edit" onclick="setC12Filter('Science')" id="c12sci">Science</button>
+          <button class="btn-edit" onclick="setC12Filter('Arts')" id="c12art">Arts</button>
+          <button class="btn-edit" onclick="setC12Filter('Commerce')" id="c12com">Commerce</button>
+        </div>
+        <input class="search-bar" placeholder="🔍 Subject search karo..." oninput="filterTableC12(this.value)"/>
+        <div class="table-wrap" id="table-Class12"></div>
+      </div>
+
+      <!-- EXPORT PAGE -->
+      <div class="page" id="page-exportPage">
+        <div class="page-title" style="margin-bottom:20px;">📤 Export / <span style="color:var(--orange);">Help</span></div>
+        <div class="card">
+          <div class="card-title">📦 Data Export</div>
+          <p style="font-size:0.88rem;color:var(--gray);margin-bottom:16px;">Saara data JSON format mein export karo — backup ke liye.</p>
+          <button class="btn-add" onclick="exportData()">⬇️ JSON Export Karo</button>
+        </div>
+        <div class="card" style="margin-top:20px;">
+          <div class="card-title">📥 Data Import</div>
+          <p style="font-size:0.88rem;color:var(--gray);margin-bottom:12px;">Pehle export ki hui JSON file se data restore karo.</p>
+          <input type="file" id="importFile" accept=".json" style="margin-bottom:12px;font-size:0.85rem;"/>
+          <br/>
+          <button class="btn-add" onclick="importData()">📥 Import Karo</button>
+        </div>
+        <div class="card" style="margin-top:20px;">
+          <div class="card-title">⚠️ Danger Zone</div>
+          <p style="font-size:0.88rem;color:var(--gray);margin-bottom:12px;">Saara data delete kar do (undo nahi hoga!)</p>
+          <button class="btn-del" style="padding:10px 20px;font-size:0.88rem;" onclick="clearAllData()">🗑️ Saara Data Delete Karo</button>
+        </div>
+        <div class="card" style="margin-top:20px;">
+          <div class="card-title">💡 Google Drive Link kaise banate hain?</div>
+          <ol style="font-size:0.87rem;color:var(--gray);line-height:2;padding-left:18px;">
+            <li>Google Drive mein PDF upload karo</li>
+            <li>PDF pe right click → <strong>Share</strong> → <strong>"Anyone with the link"</strong></li>
+            <li>Link copy karo</li>
+            <li>Link mein se <code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;">/view</code> hata ke <code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;">?export=download</code> lagao</li>
+            <li>Ya seedha link paste karo — admin panel khud convert kar dega ✅</li>
+          </ol>
+        </div>
+      </div>
+
+    </div><!-- /main -->
+  </div><!-- /admin-body -->
+</div><!-- /adminPanel -->
+
+<!-- Delete Confirm Modal -->
+<div class="modal-overlay" id="deleteModal">
+  <div class="modal-box">
+    <div class="modal-title">🗑️ Delete Confirm Karo</div>
+    <p style="font-size:0.9rem;color:var(--gray);">Kya sach mein is entry ko delete karna chahte ho? Ye undo nahi hoga.</p>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeDeleteModal()">Cancel</button>
+      <button class="btn-confirm-del" onclick="confirmDelete()">Haan, Delete Karo</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script>
+// ===== AUTH =====
+const PASS = 'natwarx2007';
+function doLogin(){
+  const v = document.getElementById('pwdInput').value;
+  if(v === PASS){
+    document.getElementById('loginScreen').style.display='none';
+    document.getElementById('adminPanel').style.display='block';
+    initAdmin();
+  } else {
+    document.getElementById('loginErr').style.display='block';
+    document.getElementById('pwdInput').value='';
+    setTimeout(()=>document.getElementById('loginErr').style.display='none',3000);
+  }
+}
+function doLogout(){
+  document.getElementById('adminPanel').style.display='none';
+  document.getElementById('loginScreen').style.display='flex';
+  document.getElementById('pwdInput').value='';
+}
+
+// ===== DATA =====
+const STORAGE_KEY = 'runsr_admin_data';
+let data = {items:[], activity:[]};
+
+function saveData(){
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+function loadData(){
+  const s = localStorage.getItem(STORAGE_KEY);
+  if(s) data = JSON.parse(s);
+}
+
+function logActivity(msg){
+  const now = new Date();
+  const time = now.toLocaleString('hi-IN');
+  data.activity.unshift({msg, time});
+  if(data.activity.length>20) data.activity=data.activity.slice(0,20);
+  saveData();
+}
+
+// ===== INIT =====
+function initAdmin(){
+  loadData();
+  renderDashboard();
+  renderAllTables();
+  renderActivity();
+}
+
+// ===== PAGE NAV =====
+function showPage(id, el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.sidebar-item').forEach(s=>s.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  if(el) el.classList.add('active');
+  if(id==='page-dashboard'||id==='dashboard') renderDashboard();
+}
+
+// ===== DASHBOARD =====
+function renderDashboard(){
+  const courses = ['BCA','BA','BSc','BCom','Class10','Class12-Science','Class12-Arts','Class12-Commerce'];
+  const total = data.items.length;
+  const available = data.items.filter(i=>i.status==='Available').length;
+  const notes = data.items.filter(i=>i.type==='Notes'||i.type==='Both').length;
+  const pyq = data.items.filter(i=>i.type==='PYQ'||i.type==='Both').length;
+
+  document.getElementById('statsRow').innerHTML = `
+    <div class="stat-card"><div class="stat-num">${total}</div><div class="stat-label">Total Entries</div></div>
+    <div class="stat-card" style="border-top-color:var(--green)"><div class="stat-num">${available}</div><div class="stat-label">Available</div></div>
+    <div class="stat-card" style="border-top-color:var(--blue)"><div class="stat-num">${notes}</div><div class="stat-label">Notes</div></div>
+    <div class="stat-card" style="border-top-color:var(--purple)"><div class="stat-num">${pyq}</div><div class="stat-label">PYQ Papers</div></div>
+  `;
+  renderActivity();
+}
+
+function renderActivity(){
+  const el = document.getElementById('recentActivity');
+  if(!data.activity.length){el.innerHTML='<span style="color:var(--gray)">Koi activity nahi abhi tak.</span>';return;}
+  el.innerHTML = data.activity.map(a=>
+    `<div style="padding:8px 0;border-bottom:1px solid #f1f5f9;display:flex;justify-content:space-between;gap:12px;">
+      <span>${a.msg}</span>
+      <span style="font-size:0.78rem;color:#94a3b8;white-space:nowrap;">${a.time}</span>
+    </div>`
+  ).join('');
+}
+
+// ===== ADD CONTENT =====
+function convertDriveLink(url){
+  // Convert view link to download link
+  const m = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+  if(m) return `https://drive.google.com/uc?export=download&id=${m[1]}`;
+  return url;
+}
+
+function addContent(){
+  const page = document.getElementById('fPage').value.trim();
+  const subject = document.getElementById('fSubject').value.trim();
+  const sem = document.getElementById('fSem').value.trim();
+  const type = document.querySelector('input[name="fType"]:checked').value;
+  const link = document.getElementById('fLink').value.trim();
+  const desc = document.getElementById('fDesc').value.trim();
+  const status = document.getElementById('fStatus').value;
+
+  if(!page||!subject||!link){showToast('❌ Page, Subject aur Link zaroori hai!','error');return;}
+
+  const item = {
+    id: Date.now(),
+    page, subject, sem, type, link: convertDriveLink(link),
+    desc, status,
+    addedOn: new Date().toLocaleDateString('hi-IN')
+  };
+
+  data.items.push(item);
+  logActivity(`✅ Add kiya: ${subject} (${page} – ${type})`);
+  saveData();
+  renderAllTables();
+  renderDashboard();
+
+  // Reset form
+  document.getElementById('fSubject').value='';
+  document.getElementById('fSem').value='';
+  document.getElementById('fLink').value='';
+  document.getElementById('fDesc').value='';
+  document.getElementById('fPage').value='';
+  document.getElementById('fStatus').value='Available';
+
+  showToast(`✅ "${subject}" add ho gaya!`,'success');
+}
+
+// ===== DELETE =====
+let _deleteId = null;
+function askDelete(id){
+  _deleteId = id;
+  document.getElementById('deleteModal').classList.add('open');
+}
+function closeDeleteModal(){
+  document.getElementById('deleteModal').classList.remove('open');
+  _deleteId=null;
+}
+function confirmDelete(){
+  if(!_deleteId) return;
+  const item = data.items.find(i=>i.id===_deleteId);
+  data.items = data.items.filter(i=>i.id!==_deleteId);
+  if(item) logActivity(`🗑️ Delete kiya: ${item.subject} (${item.page})`);
+  saveData();
+  renderAllTables();
+  renderDashboard();
+  closeDeleteModal();
+  showToast('🗑️ Entry delete ho gayi!','success');
+}
+
+// ===== RENDER TABLES =====
+function getTableHTML(items){
+  if(!items.length) return '<table><tbody><tr class="empty-row"><td colspan="6">📭 Koi content nahi mila.</td></tr></tbody></table>';
+  return `<table>
+    <thead><tr>
+      <th>Subject</th><th>Page</th><th>Sem/Year</th><th>Type</th><th>Status</th><th>Actions</th>
+    </tr></thead>
+    <tbody>
+    ${items.map(i=>`<tr>
+      <td><strong>${i.subject}</strong>${i.desc?`<br><small style="color:var(--gray)">${i.desc}</small>`:''}</td>
+      <td>${i.page}</td>
+      <td>${i.sem||'—'}</td>
+      <td><span class="tag ${i.type==='Notes'?'tag-notes':i.type==='PYQ'?'tag-pyq':'tag-notes'}">${i.type}</span></td>
+      <td><span class="tag ${i.status==='Available'?'tag-available':'tag-soon'}">${i.status}</span></td>
+      <td>
+        <button class="btn-edit" onclick="copyLink(${i.id})">🔗 Link</button>
+        <button class="btn-del" onclick="askDelete(${i.id})">🗑️ Del</button>
+      </td>
+    </tr>`).join('')}
+    </tbody></table>`;
+}
+
+function renderAllTables(){
+  const groups = {
+    'BCA': data.items.filter(i=>i.page==='BCA'),
+    'BA': data.items.filter(i=>i.page==='BA'),
+    'BSc': data.items.filter(i=>i.page==='BSc'),
+    'BCom': data.items.filter(i=>i.page==='BCom'),
+    'Class10': data.items.filter(i=>i.page==='Class10'),
+  };
+  for(const [key,items] of Object.entries(groups)){
+    const el = document.getElementById(`table-${key}`);
+    if(el) el.innerHTML = getTableHTML(items);
+  }
+  renderC12Table('all');
+}
+
+// Class 12 filter
+let _c12filter='all';
+function setC12Filter(f){
+  _c12filter=f;
+  renderC12Table(f);
+}
+function renderC12Table(f){
+  let items = data.items.filter(i=>i.page.startsWith('Class12'));
+  if(f!=='all') items=items.filter(i=>i.page.includes(f));
+  const el=document.getElementById('table-Class12');
+  if(el) el.innerHTML=getTableHTML(items);
+}
+function filterTableC12(q){
+  let items = data.items.filter(i=>i.page.startsWith('Class12'));
+  if(_c12filter!=='all') items=items.filter(i=>i.page.includes(_c12filter));
+  if(q) items=items.filter(i=>i.subject.toLowerCase().includes(q.toLowerCase())||i.page.toLowerCase().includes(q.toLowerCase()));
+  const el=document.getElementById('table-Class12');
+  if(el) el.innerHTML=getTableHTML(items);
+}
+
+function filterTable(page, q){
+  let items = data.items.filter(i=>i.page===page);
+  if(q) items=items.filter(i=>i.subject.toLowerCase().includes(q.toLowerCase()));
+  const el=document.getElementById(`table-${page}`);
+  if(el) el.innerHTML=getTableHTML(items);
+}
+
+// ===== COPY LINK =====
+function copyLink(id){
+  const item = data.items.find(i=>i.id===id);
+  if(!item) return;
+  navigator.clipboard.writeText(item.link).then(()=>showToast('🔗 Link copy ho gaya!','success'));
+}
+
+// ===== EXPORT / IMPORT =====
+function exportData(){
+  const json = JSON.stringify(data, null, 2);
+  const blob = new Blob([json],{type:'application/json'});
+  const a = document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='runsr_backup_'+Date.now()+'.json';
+  a.click();
+  showToast('📦 Data export ho gaya!','success');
+}
+function importData(){
+  const file = document.getElementById('importFile').files[0];
+  if(!file){showToast('❌ Pehle file choose karo!','error');return;}
+  const r = new FileReader();
+  r.onload=(e)=>{
+    try{
+      const d=JSON.parse(e.target.result);
+      if(d.items){
+        data=d; saveData(); renderAllTables(); renderDashboard();
+        showToast('✅ Data import ho gaya!','success');
+      } else showToast('❌ Invalid file!','error');
+    } catch{showToast('❌ File parse nahi hua!','error');}
+  };
+  r.readAsText(file);
+}
+function clearAllData(){
+  if(!confirm('Pakka? Saara data chala jaayega!')) return;
+  data={items:[],activity:[]};
+  saveData(); renderAllTables(); renderDashboard();
+  showToast('🗑️ Saara data delete ho gaya!','success');
+}
+
+// ===== TOAST =====
+let _toastTimer;
+function showToast(msg, type='success'){
+  const t=document.getElementById('toast');
+  t.textContent=msg;
+  t.className='show '+type;
+  clearTimeout(_toastTimer);
+  _toastTimer=setTimeout(()=>t.className='',3000);
+}
+
+// keyboard shortcut
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeDeleteModal();});
+</script>
+</body>
+</html>
